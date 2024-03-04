@@ -1,4 +1,4 @@
-package main
+package kvapp
 
 import (
 	"testing"
@@ -8,10 +8,10 @@ import (
 
 func TestExecuteCommand(t *testing.T) {
 	kvStore := NewKVStore()
-	res := kvStore.executeCommand("get hello")
+	res := kvStore.ExecuteCommand("get hello")
 	assert.Equal(t, res, "")
-	res = kvStore.executeCommand("put hello world")
+	res = kvStore.ExecuteCommand("put hello world")
 	assert.Equal(t, res, "ok")
-	res = kvStore.executeCommand("get hello")
+	res = kvStore.ExecuteCommand("get hello")
 	assert.Equal(t, res, "world")
 }

@@ -28,6 +28,6 @@ func main() {
 		if err != nil {
 			break
 		}
-		fmt.Println(string(response))
+		fmt.Println("Received >", string(response))
 	}
 }
