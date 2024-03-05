@@ -1,13 +1,13 @@
 package raftconfig
 
-type servers struct {
+type Node struct {
 	NodeNum int
 	Address string
 	Port    int
 }
 
-func NewServers() []servers {
-	listServers := []servers{
+func NewNodes() []Node {
+	listNodes := []Node{
 		{
 			NodeNum: 0,
 			Address: "localhost",
@@ -35,5 +35,5 @@ func NewServers() []servers {
 		},
 	}
 
-	return listServers
+	return listNodes
 }
