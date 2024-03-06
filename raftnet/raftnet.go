@@ -43,16 +43,15 @@ func (n *RaftServer) ReceiveMssg() {
 	defer listener.Close()
 
 	fmt.Printf("Listening on localhost:%d...", n.nodes[n.nodeNum].Port)
+	fmt.Println("Waiting for connection")
 
 	// Accept incoming connections indefinitely
 	for {
-		fmt.Println("Waiting for connection")
+
 		conn, err := listener.Accept()
 		if err != nil {
 			panic(err)
 		}
-
-		fmt.Println("After listner Accept()")
 
 		reader := bufio.NewReader(conn)
 		message, err := reader.ReadString('\n')
@@ -65,10 +64,8 @@ func (n *RaftServer) ReceiveMssg() {
 			break
 		}
 
-		fmt.Println("After message", string(message))
-
 		n.inbox <- string(message)
-		fmt.Println("message: ", message)
+		//fmt.Println("message: ", message)
 		// Handle each connection in a new goroutine
 		//go handleConnection(conn)
 	}
@@ -76,15 +73,14 @@ func (n *RaftServer) ReceiveMssg() {
 }
 
 func (n *RaftServer) SendMssg(destNodeNum int) {
-
+	message := <-n.outboxes[destNodeNum]
+	//fmt.Println("extracted message: ", message)
 	// Connect to the server on localhost:8080
 	conn, err := net.Dial("tcp", fmt.Sprintf("localhost:%d", n.nodes[destNodeNum].Port))
 	if err != nil {
 		panic(err)
 	}
 	defer conn.Close()
-
-	message := <-n.outboxes[destNodeNum]
 	// First, we need to send the length of the message as a 4-byte integer
 	// Convert the message length to a 4-byte binary representation
 	length := make([]byte, 4)
@@ -100,7 +96,7 @@ func (n *RaftServer) SendMssg(destNodeNum int) {
 		log.Printf("error on Write message %v \n", err)
 	}
 
-	fmt.Printf("message sent to node %d \n", n.nodeNum)
+	fmt.Printf("message sent to node %d \n", destNodeNum)
 
 }
 
@@ -109,6 +105,10 @@ func NewRaftServer(n int) RaftServer {
 	in := make(chan string)
 	listNodes := raftconfig.NewNodes()
 	out := make([]chan string, len(listNodes))
+	for i := 0; i < len(listNodes); i++ {
+		out[i] = make(chan string)
+	}
+
 	return RaftServer{
 		nodeNum:  n,
 		inbox:    in,

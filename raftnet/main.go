@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"strings"
 )
 
 func main() {
@@ -14,8 +15,6 @@ func main() {
 		fmt.Println("Please provide 1 node number: ", len(arguments))
 		return
 	}
-
-	//fmt.Printf("%#v", arguments)
 
 	num, err := strconv.Atoi(arguments[1])
 	if err != nil {
@@ -27,15 +26,34 @@ func main() {
 	go RaftServer.ReceiveMssg()
 
 	for i := 0; i < len(RaftServer.nodes); i++ {
-		go RaftServer.SendMssg(i)
+		go func(i int) {
+			for {
+				RaftServer.SendMssg(i)
+			}
+		}(i)
+
+		//go RaftServer.SendMssg(i)
 	}
 
 	go func() {
-		fmt.Println(RaftServer.Receive())
+		for {
+			fmt.Print(RaftServer.Receive())
+		}
 	}()
 
 	for {
-		bufio.NewReader(os.Stdin)
+		input, _ := bufio.NewReader(os.Stdin).ReadString('\n')
+
+		i := strings.SplitAfterN(input, " ", 2)
+		//fmt.Println("i: ", i[0])
+		node := i[0]
+		node = strings.TrimRight(node, " ")
+		nodeNum, err := strconv.Atoi(node)
+		if err != nil {
+			fmt.Println(err)
+		}
+		//fmt.Println(nodeNum)
+		RaftServer.Send(nodeNum, i[1])
 	}
 
 }
