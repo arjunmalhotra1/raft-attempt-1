@@ -54,19 +54,6 @@ func (n *RaftServer) ReceiveMssg() {
 
 		fmt.Println("After listner Accept()")
 
-		// First, we need to read the 4-byte length of the message
-		// lengthBytes := make([]byte, 4)
-		// if _, err := io.ReadFull(conn, lengthBytes); err != nil {
-		// 	log.Printf("error on ReadFull lengthBytes %v \n", err)
-		// }
-
-		// // Convert the 4-byte length to an integer
-		// length := binary.BigEndian.Uint32(lengthBytes)
-		// fmt.Println("ReadFull lengthBytes", length)
-
-		// Read the message itself
-		//message := make([]byte, length)
-
 		reader := bufio.NewReader(conn)
 		message, err := reader.ReadString('\n')
 		if err != nil {
@@ -77,11 +64,6 @@ func (n *RaftServer) ReceiveMssg() {
 			fmt.Printf("Error reading message: %v\n", err)
 			break
 		}
-
-		// message := make([]byte, 1024)
-		// if _, err := io.ReadFull(conn, message); err != nil {
-		// 	log.Printf("error on ReadFull message %v \n", err)
-		// }
 
 		fmt.Println("After message", string(message))
 

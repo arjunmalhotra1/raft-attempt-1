@@ -22,8 +22,17 @@ func main() {
 		log.Printf("err on strconv Atoi %v", err)
 	}
 
-	Raftserver := NewRaftServer(num)
-	go Raftserver.ReceiveMssg()
+	RaftServer := NewRaftServer(num)
+
+	go RaftServer.ReceiveMssg()
+
+	for i := 0; i < len(RaftServer.nodes); i++ {
+		go RaftServer.SendMssg(i)
+	}
+
+	go func() {
+		fmt.Println(RaftServer.Receive())
+	}()
 
 	for {
 		bufio.NewReader(os.Stdin)
