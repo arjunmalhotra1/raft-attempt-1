@@ -1,4 +1,4 @@
-package main
+package raftlog
 
 type LogEntry struct {
 	term    int
@@ -8,7 +8,7 @@ type RaftLog struct {
 	Log []LogEntry
 }
 
-func (rl *RaftLog) appendEntries(prevIndex int, prevTerm int, entries []LogEntry) bool {
+func (rl *RaftLog) AppendEntries(prevIndex int, prevTerm int, entries []LogEntry) bool {
 	/*
 		1. No gaps/holes in the log
 		2. assert log[prev_index].term == prev.term
