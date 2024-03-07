@@ -1,8 +1,8 @@
 package raftlog
 
 type LogEntry struct {
-	term    int
-	command string
+	Term    int
+	Command string
 }
 type RaftLog struct {
 	Log []LogEntry
@@ -20,13 +20,19 @@ func (rl *RaftLog) AppendEntries(prevIndex int, prevTerm int, entries []LogEntry
 		return false
 	}
 
-	if rl.Log[prevIndex].term != prevTerm {
+	if rl.Log[prevIndex].Term != prevTerm {
 		return false
 	}
 
 	rl.Log = append(rl.Log, entries...)
 
 	return true
+}
+
+func (rl *RaftLog) AppendNewCommand(term int, command string) {
+	prevIndex := len(rl.Log) - 1
+	prevTerm := rl.Log[prevIndex].Term
+	rl.AppendEntries(prevIndex, prevTerm, []LogEntry{{term, command}})
 }
 
 func NewRaftLog(initialEntries []LogEntry) *RaftLog {
