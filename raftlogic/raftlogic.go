@@ -2,6 +2,7 @@ package raftlogic
 
 import (
 	"fmt"
+	"log"
 	"sort"
 
 	"github.com/arjunmalhotra1/raft/raftlog"
@@ -85,6 +86,7 @@ func (rsl *RaftServerLogic) HandleMessage(msg any) []AppendEntriesResponse {
 
 func (rsl *RaftServerLogic) HandleAppendEntries(msg AppendEntries) {
 	success := rsl.log.AppendEntries(msg.prevIndex, msg.prevTerm, msg.entries)
+
 	response := AppendEntriesResponse{
 		Message: Message{source: rsl.nodeNum,
 			destination: msg.Message.destination,
@@ -98,14 +100,28 @@ func (rsl *RaftServerLogic) HandleAppendEntries(msg AppendEntries) {
 func (rsl *RaftServerLogic) HandleAppendEntriesResponse(msg AppendEntriesResponse) {
 	if msg.success {
 		// It worked!
+		fmt.Println("It was a success")
+
+		// self.next_index[msg.source] = msg.match_index + 1 # self.match_index[msg.source] + 1
+
+		// # DANGER: The match_index not going backwards requires log persistence
+		// # (which I haven't implemented yet).
+		// self.match_index[msg.source] = max(msg.match_index, self.match_index[msg.source])
+		// new_commit_index = sorted(self.match_index)[self.cluster_size // 2]
+
 		rsl.nextIndex[msg.Message.source] = msg.matchIndex + 1
-		rsl.matchIndex[msg.Message.source] = msg.matchIndex + 1
+		rsl.matchIndex[msg.Message.source] = max(msg.matchIndex, rsl.matchIndex[msg.Message.source])
 		sort.Ints(rsl.matchIndex)
-		newCommitIndex := rsl.clusterSize / 2
+		fmt.Println("rsl.matchIndex sorted", rsl.matchIndex)
+		newCommitIndex := rsl.matchIndex[rsl.clusterSize/2]
 		if newCommitIndex > rsl.commitIndex {
+			fmt.Println("success rsl log", rsl.log.Log)
+			fmt.Println("rsl.commitIndex: ", rsl.commitIndex)
+			fmt.Println("newCommitIndex: ", newCommitIndex)
 			fmt.Println("COMMITTING:", rsl.log.Log[rsl.commitIndex+1:newCommitIndex])
 		}
 	} else {
+		fmt.Println("sorry it failed")
 		// It Failed!
 		// Now what?!?!
 		rsl.nextIndex[msg.Message.source] -= 1
@@ -114,16 +130,16 @@ func (rsl *RaftServerLogic) HandleAppendEntriesResponse(msg AppendEntriesRespons
 
 func (rsl *RaftServerLogic) HandleApplicationRequest(msg ApplicationRequest) {
 	if rsl.role != "LEADER" {
-		panic("I am not a leader but the application submitted a command")
+		log.Println("I am not a leader but the application submitted a command")
 	}
 
 	rsl.log.AppendNewCommand(rsl.currentTerm, msg.command)
 	rsl.matchIndex[rsl.nodeNum] = len(rsl.log.Log) - 1
 }
 
-func (rsl *RaftServerLogic) HandleUpdateFollowers() {
+func (rsl *RaftServerLogic) HandleUpdateFollowers(msg UpdateFollowers) {
 	if rsl.role != "LEADER" {
-		panic("I am not the leader, I cannot update the followers")
+		log.Println("I am not the leader, I cannot update the followers")
 	}
 
 	for follower := 0; follower < rsl.clusterSize; follower++ {

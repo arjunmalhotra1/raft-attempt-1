@@ -1,6 +1,7 @@
 package raftlogic
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -15,12 +16,18 @@ func TestBecomeLeader(t *testing.T) {
 		destination: 0,
 		term:        1,
 	}
+	upf := UpdateFollowers{
+		Message: Message,
+	}
 	req := ApplicationRequest{
 		Message: Message,
 		command: "set x 42",
 	}
 	server0.HandleMessage(req)
-	server0.HandleMessage(Message)
+	//fmt.Println("len log.Log: ", len(server0.log.Log))
+	server0.HandleMessage(upf)
+
+	fmt.Println("len of outgoingAppend: ", len(server0.outgoingAppendEntries))
 
 	server1.HandleMessage(server0.outgoingAppendEntries[0])
 
