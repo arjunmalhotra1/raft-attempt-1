@@ -1,4 +1,4 @@
-package main
+package raftlogic
 
 import (
 	"fmt"
@@ -56,7 +56,7 @@ func (rsl *RaftServerLogic) sendAppendEntries(ae AppendEntries) {
 	rsl.outgoingAppendEntries = append(rsl.outgoingAppendEntries, ae)
 }
 
-func (rsl *RaftServerLogic) becomeLeader() {
+func (rsl *RaftServerLogic) BecomeLeader() {
 	for i := 0; i < rsl.clusterSize; i++ {
 		rsl.nextIndex[i] = len(rsl.log.Log)
 	}
@@ -76,7 +76,9 @@ func (rsl *RaftServerLogic) HandleMessage(msg any) []AppendEntriesResponse {
 	case AppendEntriesResponse:
 		rsl.HandleAppendEntriesResponse(v)
 	case ApplicationRequest:
+		rsl.HandleApplicationRequest(v)
 	case UpdateFollowers:
+		rsl.HandleUpdateFollowers(v)
 	}
 	return rsl.outgoingAppendEntriesResponse
 }
@@ -110,12 +112,12 @@ func (rsl *RaftServerLogic) HandleAppendEntriesResponse(msg AppendEntriesRespons
 	}
 }
 
-func (rsl *RaftServerLogic) HandleApplicationRequest(command string) {
+func (rsl *RaftServerLogic) HandleApplicationRequest(msg ApplicationRequest) {
 	if rsl.role != "LEADER" {
 		panic("I am not a leader but the application submitted a command")
 	}
 
-	rsl.log.AppendNewCommand(rsl.currentTerm, command)
+	rsl.log.AppendNewCommand(rsl.currentTerm, msg.command)
 	rsl.matchIndex[rsl.nodeNum] = len(rsl.log.Log) - 1
 }
 
@@ -149,6 +151,7 @@ func NewRaftServerLogic(nodeNum, clusterSize int) *RaftServerLogic {
 		log:                           raftlog.NewRaftLog([]raftlog.LogEntry{}),
 		currentTerm:                   1,
 		nextIndex:                     make([]int, clusterSize),
+		matchIndex:                    make([]int, clusterSize),
 		role:                          "FOLLOWER",
 		outgoingAppendEntriesResponse: []AppendEntriesResponse{},
 	}
