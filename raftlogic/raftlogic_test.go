@@ -1,7 +1,6 @@
 package raftlogic
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -27,10 +26,7 @@ func TestBecomeLeader(t *testing.T) {
 	//fmt.Println("len log.Log: ", len(server0.log.Log))
 	server0.HandleMessage(upf)
 
-	fmt.Println("len of outgoingAppend: ", len(server0.outgoingAppendEntries))
-
 	server1.HandleMessage(server0.outgoingAppendEntries[0])
-
 	server0.HandleMessage(server1.outgoingAppendEntriesResponse[0])
 
 	assert.Equal(t, server0.log.Log, server1.log.Log)

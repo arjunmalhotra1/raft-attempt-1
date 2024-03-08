@@ -112,13 +112,9 @@ func (rsl *RaftServerLogic) HandleAppendEntriesResponse(msg AppendEntriesRespons
 		rsl.nextIndex[msg.Message.source] = msg.matchIndex + 1
 		rsl.matchIndex[msg.Message.source] = max(msg.matchIndex, rsl.matchIndex[msg.Message.source])
 		sort.Ints(rsl.matchIndex)
-		fmt.Println("rsl.matchIndex sorted", rsl.matchIndex)
 		newCommitIndex := rsl.matchIndex[rsl.clusterSize/2]
 		if newCommitIndex > rsl.commitIndex {
-			fmt.Println("success rsl log", rsl.log.Log)
-			fmt.Println("rsl.commitIndex: ", rsl.commitIndex)
-			fmt.Println("newCommitIndex: ", newCommitIndex)
-			fmt.Println("COMMITTING:", rsl.log.Log[rsl.commitIndex+1:newCommitIndex])
+			fmt.Println("COMMITTING:", rsl.log.Log[rsl.commitIndex+1:newCommitIndex+1])
 		}
 	} else {
 		fmt.Println("sorry it failed")
