@@ -36,6 +36,10 @@ type UpdateFollowers struct {
 	Message Message
 }
 
+type CallElection struct {
+	Message Message
+}
+
 type RaftServerLogic struct {
 	nodeNum                       int
 	clusterSize                   int
@@ -47,6 +51,8 @@ type RaftServerLogic struct {
 	matchIndex                    []int
 	outgoingAppendEntriesResponse []AppendEntriesResponse
 	outgoingAppendEntries         []AppendEntries
+	votesReceived                 []bool
+	votedFor                      int
 }
 
 func (rsl *RaftServerLogic) sendAppendEntriesResponse(ae AppendEntriesResponse) {
@@ -80,6 +86,8 @@ func (rsl *RaftServerLogic) HandleMessage(msg any) []AppendEntriesResponse {
 		rsl.HandleApplicationRequest(v)
 	case UpdateFollowers:
 		rsl.HandleUpdateFollowers(v)
+	case CallElection:
+		rsl.HandleCallElection(v)
 	}
 	return rsl.outgoingAppendEntriesResponse
 }
@@ -156,6 +164,28 @@ func (rsl *RaftServerLogic) HandleUpdateFollowers(msg UpdateFollowers) {
 	}
 }
 
+func (rsl *RaftServerLogic) HandleCallElection(msg CallElection) {
+	if msg.Message.term < rsl.currentTerm {
+		return
+	}
+
+	// Become a candidate and call an election
+	rsl.currentTerm += 1
+	rsl.role = "CANDIDATE"
+	rsl.votesReceived = make([]bool, rsl.clusterSize)
+	rsl.votesReceived[rsl.nodeNum] = true
+	rsl.votedFor = rsl.nodeNum
+	msUpd := Message{
+		source:      rsl.nodeNum,
+		destination: rsl.nodeNum,
+		term:        rsl.currentTerm,
+	}
+	upd := UpdateFollowers{
+		Message: msUpd,
+	}
+	rsl.sendUpdateFollowers(upd)
+}
+
 func NewRaftServerLogic(nodeNum, clusterSize int) *RaftServerLogic {
 	rsl := RaftServerLogic{
 		nodeNum:                       nodeNum,
@@ -166,6 +196,7 @@ func NewRaftServerLogic(nodeNum, clusterSize int) *RaftServerLogic {
 		matchIndex:                    make([]int, clusterSize),
 		role:                          "FOLLOWER",
 		outgoingAppendEntriesResponse: []AppendEntriesResponse{},
+		votesReceived:                 []bool{},
 	}
 	return &rsl
 }
